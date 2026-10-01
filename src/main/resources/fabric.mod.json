@@ -1,0 +1,31 @@
+{
+	"schemaVersion": 1,
+	"id": "avies-waypoints",
+	"version": "${version}",
+	"name": "Avies Waypoints",
+	"description": "Waypoints in the world, shareable in chat (compatible with Xaero's Minimap).",
+	"authors": [
+		"Avie29"
+	],
+	"contact": {
+		"homepage": "https://avie29.me/"
+	},
+	"license": "CC-BY-NC-4.0",
+	"icon": "assets/avies-waypoints/icon.png",
+	"environment": "client",
+	"entrypoints": {
+		"client": [
+			"me.avie29.waypoints.AviesWaypoints"
+		]
+	},
+	"mixins": [
+		"avies-waypoints.mixins.json"
+	],
+	"depends": {
+		"fabricloader": ">=0.19.5",
+		"minecraft": "~26.2",
+		"java": ">=25",
+		"fabric-api": "*",
+		"tabbylib": ">=1.0.0"
+	}
+}
