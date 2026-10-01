@@ -6,10 +6,6 @@ import net.minecraft.network.chat.Component;
 
 import java.util.List;
 
-/**
- * Death waypoints: the place of the last death is "Latest Death". When the player dies again, the previous one
- * becomes "Old Death #N", numbered over all dimensions of the world (#1 is the oldest).
- */
 public final class DeathWaypoints {
 	public static final String ICON = "☠";
 

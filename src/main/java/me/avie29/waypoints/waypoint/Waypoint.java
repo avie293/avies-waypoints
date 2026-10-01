@@ -2,33 +2,24 @@ package me.avie29.waypoints.waypoint;
 
 import net.minecraft.world.phys.Vec3;
 
-/** One waypoint. Mutable, the edit screen changes the fields directly. */
 public class Waypoint {
 	public enum Type {
 		NORMAL,
-		/** Where the player died last ("Latest Death"). */
 		DEATH,
-		/** An earlier death ("Old Death #3"), see {@link #deathNumber}. */
 		OLD_DEATH
 	}
 
 	public String name;
-	/** Short text inside the icon, 1-3 characters (Xaero calls this "initials"). */
 	public String initials;
 	public int x;
 	public int y;
 	public int z;
-	/** False when the waypoint was shared without a height ("~" in Xaero's format). It is then drawn at the camera height. */
 	public boolean yIncluded = true;
-	/** Index into {@link WaypointColor} (0-20, same palette as Xaero). */
 	public int color;
 	public boolean visible = true;
 	public Type type = Type.NORMAL;
-	/** Number of an {@link Type#OLD_DEATH}, counts up over all dimensions of the world (1 = oldest). */
 	public int deathNumber;
-	/** The name was given by this mod (death waypoints) and is renamed automatically, false once the player renames it. */
 	public boolean autoName;
-	/** Only kept for Xaero compatibility. */
 	public boolean rotateOnTp;
 	public int yaw;
 
@@ -41,12 +32,10 @@ public class Waypoint {
 		this.color = WaypointColor.clamp(color);
 	}
 
-	/** Center of the waypoint block, at the height the icon is drawn. */
 	public Vec3 renderPos(double cameraY) {
 		return new Vec3(this.x + 0.5, this.yIncluded ? this.y + 1.0 : cameraY, this.z + 0.5);
 	}
 
-	/** First character of every word, at most two, like Xaero does it. */
 	public static String defaultInitials(String name) {
 		StringBuilder builder = new StringBuilder();
 		for (String word : name.trim().split("\\s+")) {

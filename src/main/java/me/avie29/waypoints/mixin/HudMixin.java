@@ -6,7 +6,6 @@ import net.minecraft.client.gui.Hud;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 
-/** Shows the locator bar also without tracked players when this mod's waypoints are shown on it. */
 @Mixin(Hud.class)
 public abstract class HudMixin {
 	@ModifyExpressionValue(

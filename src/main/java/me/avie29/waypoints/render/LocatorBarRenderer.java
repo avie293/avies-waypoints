@@ -28,16 +28,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 
-/**
- * Replaces the drawing of the vanilla locator bar (the bar above the hotbar) while player heads are enabled:
- * <ul>
- *     <li>players are shown with their head (8x8) and a frame in their vanilla dot color; the head can not shrink
- *     like the dot, so it gets fainter with distance instead (between the near and far distance of the waypoint style)</li>
- *     <li>optionally this mod's waypoints as vanilla dots in the waypoint color, shrinking with distance like vanilla</li>
- *     <li>name and distance of the marker closest to the middle (if it is near the middle) in small text above the bar</li>
- * </ul>
- * Angle, up/down arrows and distances use vanilla's {@link TrackedWaypoint}, so everything moves like vanilla dots.
- */
 public final class LocatorBarRenderer {
 	private static final Identifier ARROW_UP = Identifier.withDefaultNamespace("hud/locator_bar_arrow_up");
 	private static final Identifier ARROW_DOWN = Identifier.withDefaultNamespace("hud/locator_bar_arrow_down");
@@ -45,7 +35,6 @@ public final class LocatorBarRenderer {
 	private static final int DOT_SIZE = 9;
 	private static final int HEAD_SIZE = 8;
 	private static final double VISIBLE_DEGREES = 60.0;
-	/** A marker this close to the middle (in GUI pixels) counts as looked at. */
 	private static final int POINTING_RANGE = 6;
 	private static final float FAR_HEAD_ALPHA = 0.45F;
 
@@ -56,12 +45,10 @@ public final class LocatorBarRenderer {
 						  @Nullable PlayerInfo player, float alpha, String name) {
 	}
 
-	/** Whether this mod draws the locator bar instead of vanilla. */
 	public static boolean active() {
 		return WaypointsConfig.PLAYER_HEADS.get();
 	}
 
-	/** Whether waypoints are shown on the bar, so the bar has to be shown even without players. */
 	public static boolean showsWaypoints() {
 		return active() && WaypointsConfig.WAYPOINTS_ON_BAR.get() && WaypointStore.current().stream().anyMatch(waypoint -> waypoint.visible);
 	}
@@ -100,7 +87,6 @@ public final class LocatorBarRenderer {
 			net.minecraft.world.waypoints.Waypoint.Icon icon = tracked.icon();
 			WaypointStyle style = minecraft.gui.hud.getWaypointStyles().get(icon.style);
 			float distance = (float) Math.sqrt(tracked.distanceSquared(cameraEntity));
-			// Same color as the vanilla dot
 			int color = icon.color.orElseGet(() -> tracked.id().map(
 				uuid -> ARGB.setBrightness(ARGB.color(255, uuid.hashCode()), 0.9F),
 				name -> ARGB.setBrightness(ARGB.color(255, name.hashCode()), 0.9F)));
@@ -110,7 +96,6 @@ public final class LocatorBarRenderer {
 			add(markers, minecraft, level, tracked, partialTick, distance, color, style.sprite(distance), player, alpha, name);
 		});
 
-		// Far ones first, so near ones are drawn on top
 		markers.sort(Comparator.comparingDouble(Marker::distance).reversed());
 		int middle = Mth.ceil((graphics.guiWidth() - DOT_SIZE) / 2.0F);
 		Marker pointed = null;
@@ -139,7 +124,6 @@ public final class LocatorBarRenderer {
 	private static void draw(GuiGraphicsExtractor graphics, Marker marker, int x, int top) {
 		boolean head = marker.player() != null;
 		if (head) {
-			// Head with a 1 pixel frame in the player's color, in the 9x9 area of the vanilla dot
 			int alpha = Math.round(marker.alpha() * 255);
 			int headX = x;
 			int headY = top - 2;
@@ -156,7 +140,6 @@ public final class LocatorBarRenderer {
 		}
 	}
 
-	/** "Name 243m" in half size text above the marker, above its arrow if it has one. */
 	private static void label(GuiGraphicsExtractor graphics, Minecraft minecraft, Marker marker, int x, int top) {
 		String distance = marker.distance() >= 10000
 			? String.format(Locale.ROOT, "%.1fkm", marker.distance() / 1000.0F)

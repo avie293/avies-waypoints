@@ -9,7 +9,6 @@ import net.minecraft.network.chat.Component;
 
 import java.util.function.BooleanSupplier;
 
-/** A small square in one of the 21 waypoint colors, outlined white while selected. */
 public class ColorSwatch extends AbstractButton {
 	private final int colorIndex;
 	private final BooleanSupplier selected;

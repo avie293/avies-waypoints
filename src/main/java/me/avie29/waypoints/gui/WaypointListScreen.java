@@ -26,11 +26,6 @@ import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Set;
 
-/**
- * List of the waypoints of one dimension with buttons to add, edit, delete, hide, share and teleport.
- * Waypoints can be ticked with the checkbox in front of them (shift click ticks a range, Ctrl+A all of them);
- * delete and hide/show then work on all ticked waypoints, otherwise on the selected one.
- */
 public class WaypointListScreen extends Screen {
 	private static final int ROW_HEIGHT = 24;
 	private static final int CHECKBOX_SIZE = 12;
@@ -49,9 +44,7 @@ public class WaypointListScreen extends Screen {
 	private Button shareButton;
 	private Button teleportButton;
 	private Button dimensionButton;
-	/** Ticked waypoints. By identity, two waypoints can have the same values. */
 	private final Set<Waypoint> checked = Collections.newSetFromMap(new IdentityHashMap<>());
-	/** The waypoint whose checkbox was clicked last, start of a shift click range. */
 	private @Nullable Waypoint lastChecked;
 
 	public WaypointListScreen(@Nullable Screen parent) {
@@ -95,7 +88,6 @@ public class WaypointListScreen extends Screen {
 		this.updateButtons();
 	}
 
-	/** The ticked waypoints in list order, or the selected one when none is ticked. */
 	private List<Waypoint> targets() {
 		if (this.checked.isEmpty()) {
 			WaypointList.Entry entry = this.list.getSelected();
@@ -104,7 +96,6 @@ public class WaypointListScreen extends Screen {
 		return WaypointStore.get(this.dimension).stream().filter(this.checked::contains).toList();
 	}
 
-	/** The waypoint edit, share and teleport work on, null when none or several are targeted. */
 	private @Nullable Waypoint single() {
 		List<Waypoint> targets = this.targets();
 		return targets.size() == 1 ? targets.getFirst() : null;
@@ -131,7 +122,6 @@ public class WaypointListScreen extends Screen {
 		this.dimensionButton.active = WaypointStore.dimensions().size() > 1;
 	}
 
-	/** "Delete" for one waypoint, "Delete (3)" for several. */
 	private static Component withCount(String key, int count) {
 		Component text = Component.translatable(key);
 		return count > 1 ? Component.translatable("avies-waypoints.list.count", text, count) : text;
@@ -170,7 +160,6 @@ public class WaypointListScreen extends Screen {
 		}
 	}
 
-	/** Ticks or unticks a waypoint, with shift also everything between it and the last clicked checkbox. */
 	private void toggleChecked(Waypoint waypoint, boolean range) {
 		boolean check = !this.checked.contains(waypoint);
 		List<Waypoint> all = WaypointStore.get(this.dimension);
@@ -220,7 +209,6 @@ public class WaypointListScreen extends Screen {
 		}, title, message));
 	}
 
-	/** Hides all targets when one of them is visible, otherwise shows them all. */
 	private void toggleVisibility() {
 		List<Waypoint> targets = this.targets();
 		boolean visible = targets.stream().noneMatch(waypoint -> waypoint.visible);
@@ -257,7 +245,6 @@ public class WaypointListScreen extends Screen {
 
 	@Override
 	public void added() {
-		// Coming back from the edit or confirm screen: init() is not called again, so the list is refreshed here
 		if (this.list != null) {
 			List<Waypoint> existing = WaypointStore.get(this.dimension);
 			this.checked.removeIf(waypoint -> existing.stream().noneMatch(other -> other == waypoint));
@@ -344,7 +331,6 @@ public class WaypointListScreen extends Screen {
 				graphics.blitSprite(RenderPipelines.GUI_TEXTURED, sprite, x, y + 4, CHECKBOX_SIZE, CHECKBOX_SIZE);
 				x += CHECKBOX_SIZE + 6;
 
-				// Same icon as in the world
 				int iconSize = 18;
 				graphics.fill(x, y + 1, x + iconSize, y + 1 + iconSize, alpha | (WaypointColor.argb(this.waypoint.color) & 0xFFFFFF));
 				graphics.centeredText(font, this.waypoint.initials, x + iconSize / 2, y + 6, textColor);

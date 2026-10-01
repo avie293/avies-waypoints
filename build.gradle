@@ -66,24 +66,3 @@ publishing {
 		// retrieving dependencies.
 	}
 }
-
-// Client gametests (src/gametest): "gradlew runClientGameTest" starts a client, runs the tests and takes screenshots
-// (build/run/clientGameTest/screenshots). Mods in run/mods (e.g. Xaero's Minimap for comparison) are loaded too.
-fabricApi {
-	configureTests {
-		createSourceSet = true
-		modId = "avies-waypoints-gametest"
-		enableGameTests = false
-		enableClientGameTests = true
-		eula = true
-	}
-}
-
-def copyRunModsToGameTest = tasks.register("copyRunModsToGameTest", Copy) {
-	from("run/mods") { include "*.jar" }
-	into("build/run/clientGameTest/mods")
-	mustRunAfter "deleteGameTestRunDir"
-}
-tasks.named("runClientGameTest") {
-	dependsOn copyRunModsToGameTest
-}

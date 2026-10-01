@@ -7,27 +7,16 @@ import org.jspecify.annotations.Nullable;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/**
- * The chat format Xaero's Minimap (26.5) uses to share waypoints, e.g.
- * <pre>xaero-waypoint:Test:T:0:-60:0:12:false:0:Internal-overworld</pre>
- * Fields: name, initials, x, y ("~" when the height is unknown), z, color (index into the 16 chat colors),
- * rotate on teleport, yaw, destination ("Internal-" + dimension, "External" or missing).
- * <p>
- * Xaero escapes name, initials and destination: ":" becomes "^col^", then "-" becomes "^min^",
- * "_" becomes "-" and "*" becomes "^ast^". The old format ("xaero_waypoint:") is not escaped.
- */
 public final class XaeroShareFormat {
 	public static final String PREFIX = "xaero-waypoint:";
 	private static final String INTERNAL = "Internal-";
 
-	/** Finds a shared waypoint anywhere in a chat line (players' names etc. come before it). */
 	private static final Pattern PATTERN = Pattern.compile(
 		"(xaero[-_]waypoint):([^:]*):([^:]*):(-?\\d+):(~|-?\\d+):(-?\\d+):(\\d+):(true|false):(-?\\d+)(?::(\\S+))?");
 
 	private XaeroShareFormat() {
 	}
 
-	/** A waypoint read from chat, with the dimension it belongs to (null when it can not be told). */
 	public record Shared(Waypoint waypoint, @Nullable String dimension, String raw) {
 	}
 
@@ -44,7 +33,6 @@ public final class XaeroShareFormat {
 			+ INTERNAL + removeFormatting(dimensionKey(dimension).replace(":", "^col^"));
 	}
 
-	/** Finds the first shared waypoint in a text, or null. */
 	public static @Nullable Shared find(String text) {
 		Matcher matcher = PATTERN.matcher(text.replaceAll("§.", ""));
 		if (!matcher.find()) {
@@ -88,7 +76,6 @@ public final class XaeroShareFormat {
 		return text.replace("^ast^", "*").replace("-", "_").replace("^min^", "-");
 	}
 
-	/** The name Xaero uses for a dimension: "overworld", "the_nether", "the_end" or "dim%namespace$path". */
 	static String dimensionKey(String dimension) {
 		return switch (dimension) {
 			case "minecraft:overworld" -> "overworld";
@@ -102,18 +89,15 @@ public final class XaeroShareFormat {
 		};
 	}
 
-	/** Xaero's destination ("Internal-overworld", "Internal-dim%-1", ...) back to a dimension id. */
 	static @Nullable String dimensionOf(String destination) {
 		if (!destination.startsWith(INTERNAL)) {
 			return null;
 		}
 		String key = unescape(destination.substring(INTERNAL.length()));
-		// Sub containers (multiworld ids) come after a slash
 		int slash = key.indexOf('/');
 		if (slash >= 0) {
 			key = key.substring(0, slash);
 		}
-		// Older versions of this mod and of Xaero added "-waypoints"
 		if (key.endsWith("_waypoints")) {
 			key = key.substring(0, key.length() - "_waypoints".length());
 		}

@@ -11,7 +11,6 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-/** Draws the locator bar markers with {@link LocatorBarRenderer} while player heads are enabled. */
 @Mixin(LocatorBar.class)
 public abstract class LocatorBarMixin implements ContextualBar {
 	@Inject(method = "extractRenderState", at = @At("HEAD"), cancellable = true)

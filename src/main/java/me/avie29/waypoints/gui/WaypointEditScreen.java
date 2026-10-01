@@ -14,7 +14,6 @@ import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
 import org.jspecify.annotations.Nullable;
 
-/** Creates a new waypoint or edits an existing one. */
 public class WaypointEditScreen extends Screen {
 	private static final int VALID_COLOR = 0xFFE0E0E0;
 	private static final int INVALID_COLOR = 0xFFFF5555;
@@ -29,7 +28,6 @@ public class WaypointEditScreen extends Screen {
 	private String y;
 	private String z;
 	private int color;
-	/** Initials follow the name until the player types own initials. */
 	private boolean customInitials;
 
 	private EditBox nameBox;
@@ -53,7 +51,6 @@ public class WaypointEditScreen extends Screen {
 		this.customInitials = editing != null && !values.initials.equals(Waypoint.defaultInitials(values.name));
 	}
 
-	/** New waypoint at the player's position in the current dimension. */
 	public static WaypointEditScreen create(@Nullable Screen parent) {
 		Minecraft minecraft = Minecraft.getInstance();
 		BlockPos pos = minecraft.player != null ? minecraft.player.blockPosition() : BlockPos.ZERO;

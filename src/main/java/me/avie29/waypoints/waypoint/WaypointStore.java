@@ -27,10 +27,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-/**
- * Waypoints of the world / server the player is in, grouped by dimension id
- * (e.g. "minecraft:overworld"). Saved in {@code config/avies-waypoints/worlds/<world>.json}.
- */
 public final class WaypointStore {
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
 	private static final Type LIST_TYPE = new TypeToken<List<Waypoint>>() {
@@ -43,7 +39,6 @@ public final class WaypointStore {
 	private WaypointStore() {
 	}
 
-	/** Called every client tick: loads the waypoints when joining a world and saves them when leaving. */
 	public static void tick(Minecraft minecraft) {
 		String key = minecraft.level == null ? null : currentWorldKey(minecraft);
 		if (key == null ? worldKey == null : key.equals(worldKey)) {
@@ -59,23 +54,19 @@ public final class WaypointStore {
 		}
 	}
 
-	/** Waypoints of a dimension. The list is live, call {@link #save()} after changing it. */
 	public static List<Waypoint> get(String dimension) {
 		return WAYPOINTS.computeIfAbsent(dimension, d -> new ArrayList<>());
 	}
 
-	/** Waypoints of the dimension the player is in, empty when not in a world. */
 	public static List<Waypoint> current() {
 		String dimension = currentDimension();
 		return dimension == null ? List.of() : get(dimension);
 	}
 
-	/** Waypoints of all dimensions of the current world, by dimension id. The lists are live. */
 	public static Map<String, List<Waypoint>> all() {
 		return WAYPOINTS;
 	}
 
-	/** Dimensions that have waypoints, plus the current one. */
 	public static List<String> dimensions() {
 		List<String> dimensions = new ArrayList<>();
 		WAYPOINTS.forEach((dimension, list) -> {
@@ -105,7 +96,6 @@ public final class WaypointStore {
 		save();
 	}
 
-	/** Removes several waypoints and saves once. */
 	public static void removeAll(String dimension, List<Waypoint> waypoints) {
 		get(dimension).removeAll(waypoints);
 		save();
@@ -158,7 +148,6 @@ public final class WaypointStore {
 			try {
 				Files.copy(file, file.resolveSibling(file.getFileName() + ".broken"), StandardCopyOption.REPLACE_EXISTING);
 			} catch (IOException ignored) {
-				// Nothing more we can do
 			}
 		}
 	}

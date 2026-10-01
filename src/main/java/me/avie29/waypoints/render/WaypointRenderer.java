@@ -20,19 +20,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 
-/**
- * Draws the waypoints of the current dimension at the screen position of their world position, with the same
- * look as Xaero's Minimap (measured against Xaero 26.5 in the client gametest):
- * <ul>
- *     <li>a 9x9 box in the waypoint color (52% * opacity alpha, 1.5x while pointed at) with the initials,
- *     its bottom edge at one block above the waypoint</li>
- *     <li>below it the name (half size) and the distance ("123.4m", "10.0km" from 10000 m on)</li>
- *     <li>the distance is shown for the waypoint the player points at (10° to the side), closer than 20 m
- *     only the name is shown instead</li>
- * </ul>
- * Everything is drawn in real screen pixels with Xaero's scale (2, or a 500th of the smaller window side),
- * so the size does not depend on the GUI scale.
- */
 public final class WaypointRenderer implements HudElement {
 	private static final int TEXT_COLOR = 0xFFFFFFFF;
 	private static final int LABEL_BACKGROUND = 0x5A000000;
@@ -72,7 +59,6 @@ public final class WaypointRenderer implements HudElement {
 			}
 			Vec3 pos = waypoint.renderPos(playerPos.y + 1.0);
 			Vec3 offset = pos.subtract(cameraPos);
-			// Behind the camera the projection mirrors the point, so those are skipped
 			if (offset.x * forward.x() + offset.y * forward.y() + offset.z * forward.z() <= 0.05) {
 				continue;
 			}
@@ -86,11 +72,8 @@ public final class WaypointRenderer implements HudElement {
 		if (visible.isEmpty()) {
 			return;
 		}
-		// Far ones first, so near waypoints are drawn on top
 		visible.sort(Comparator.comparingDouble(Visible::distance).reversed());
 
-		// The waypoint pointed at: within 10° to the side (any angle up or down), the one closest to the crosshair.
-		// While sneaking every waypoint in that range counts, like in Xaero.
 		double fov = Math.toRadians(minecraft.options.fov().get());
 		double pointingHalfWidth = width / 2.0 * Math.tan(POINTING_ANGLE) / (Math.tan(fov / 2.0) * width / height);
 		boolean all = player.isShiftKeyDown();
@@ -137,7 +120,6 @@ public final class WaypointRenderer implements HudElement {
 		graphics.pose().pushMatrix();
 		graphics.pose().translate((float) Math.floor(entry.screenX()), (float) Math.floor(entry.screenY()));
 
-		// Icon: the box goes from -5 to 4 (9 wide) and from -9 to 0, wider for wide initials
 		int halfIconPixel = (int) iconScale / 2;
 		graphics.pose().pushMatrix();
 		graphics.pose().translate(halfIconPixel, 0);
@@ -150,7 +132,6 @@ public final class WaypointRenderer implements HudElement {
 		graphics.text(font, waypoint.initials, -initialsWidth / 2, -8, TEXT_COLOR, false);
 		graphics.pose().popMatrix();
 
-		// Labels below the icon
 		int y = 2;
 		if (showName) {
 			label(graphics, font, waypoint.name, y, nameScale);
@@ -177,7 +158,6 @@ public final class WaypointRenderer implements HudElement {
 		graphics.pose().popMatrix();
 	}
 
-	/** Distance from the player's feet to the waypoint block (height ignored when the waypoint has none). */
 	public static double distance(Waypoint waypoint, Vec3 from) {
 		double x = waypoint.x + 0.5 - from.x;
 		double y = waypoint.yIncluded ? waypoint.y - from.y : 0;
@@ -191,7 +171,6 @@ public final class WaypointRenderer implements HudElement {
 		return Math.sqrt(x * x + z * z);
 	}
 
-	/** Like Xaero: one decimal, kilometers from 10000 m on. */
 	public static String formatDistance(double distance) {
 		return distance >= KM_THRESHOLD
 			? String.format(Locale.ROOT, "%.1fkm", distance / 1000.0)

@@ -4,10 +4,6 @@ import net.minecraft.world.item.DyeColor;
 
 import java.util.concurrent.ThreadLocalRandom;
 
-/**
- * The 21 waypoint colors of Xaero's Minimap, in Xaero's order. Shared waypoints carry the index into this list,
- * so order and values must stay the same as in Xaero.
- */
 public final class WaypointColor {
 	private static final String[] NAMES = {
 		"black", "dark_blue", "dark_green", "dark_aqua", "dark_red", "dark_purple", "gold", "gray",
@@ -30,7 +26,6 @@ public final class WaypointColor {
 		return Math.clamp(index, 0, COUNT - 1);
 	}
 
-	/** Opaque ARGB color of the palette entry. */
 	public static int argb(int index) {
 		return 0xFF000000 | rgb(index);
 	}
@@ -39,12 +34,10 @@ public final class WaypointColor {
 		return RGB[clamp(index)] & 0xFFFFFF;
 	}
 
-	/** Translation key of the color name. */
 	public static String translationKey(int index) {
 		return "avies-waypoints.color." + NAMES[clamp(index)];
 	}
 
-	/** Random color for new waypoints, skips black and the grays. */
 	public static int random() {
 		int[] nice = {1, 2, 3, 4, 5, 6, 9, 10, 11, 12, 13, 14, 16, 17, 18, 19};
 		return nice[ThreadLocalRandom.current().nextInt(nice.length)];

@@ -10,7 +10,6 @@ import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import org.lwjgl.glfw.GLFW;
 
-/** Same default keys as Xaero's Minimap: B new waypoint, U waypoint list. */
 public final class Keybinds {
 	private static final KeyMapping.Category CATEGORY = KeyMapping.Category.register(AviesWaypoints.id("waypoints"));
 

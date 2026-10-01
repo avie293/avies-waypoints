@@ -11,14 +11,12 @@ import me.avie29.waypoints.Keybinds;
 import net.minecraft.network.chat.Component;
 
 public final class WaypointsConfig {
-	/** When a text next to the waypoint icon is shown. */
 	public enum ShowMode {
 		ALWAYS,
 		LOOKING,
 		NEVER
 	}
 
-	// ------------------------------------------------ display
 	public static final BooleanOption ENABLED = BooleanOption.builder("enabled", true).build();
 	public static final EnumOption<ShowMode> SHOW_DISTANCE = EnumOption.builder("showDistance", ShowMode.LOOKING).dependsOn(ENABLED).build();
 	public static final BooleanOption NAME_WITH_DISTANCE = BooleanOption.builder("nameWithDistance", true).dependsOn(ENABLED).build();
@@ -34,12 +32,10 @@ public final class WaypointsConfig {
 		.dependsOn(ENABLED)
 		.build();
 
-	// ------------------------------------------------ waypoints
 	public static final BooleanOption DEATH_WAYPOINTS = BooleanOption.builder("deathWaypoints", true).build();
 	public static final BooleanOption KEEP_OLD_DEATHS = BooleanOption.builder("keepOldDeaths", true).dependsOn(DEATH_WAYPOINTS).build();
 	public static final BooleanOption DETECT_SHARED = BooleanOption.builder("detectShared", true).build();
 
-	// ------------------------------------------------ locator bar (the vanilla bar above the hotbar)
 	public static final BooleanOption PLAYER_HEADS = BooleanOption.builder("playerHeads", false).build();
 	public static final BooleanOption WAYPOINTS_ON_BAR = BooleanOption.builder("waypointsOnBar", false).dependsOn(PLAYER_HEADS).build();
 
@@ -48,7 +44,6 @@ public final class WaypointsConfig {
 	private WaypointsConfig() {
 	}
 
-	/** Call after the key mappings are registered. */
 	public static void init() {
 		CONFIG = TabbyConfig.builder(AviesWaypoints.MOD_ID)
 			.category("general", category -> category

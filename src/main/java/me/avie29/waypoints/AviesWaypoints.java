@@ -32,7 +32,6 @@ public class AviesWaypoints implements ClientModInitializer {
 		WaypointsConfig.init();
 		ChatShareHandler.register();
 
-		// Below the chat, so chat and screens stay readable
 		HudElementRegistry.attachElementBefore(VanillaHudElements.CHAT, id("waypoints"), new WaypointRenderer());
 
 		ClientTickEvents.END_CLIENT_TICK.register(minecraft -> {
@@ -46,7 +45,6 @@ public class AviesWaypoints implements ClientModInitializer {
 			ClientCommands.literal("avieswaypoints")
 				.executes(context -> {
 					Minecraft minecraft = Minecraft.getInstance();
-					// Commands run while the chat is still open, so the screen is set afterwards
 					minecraft.execute(() -> minecraft.gui.setScreen(new WaypointListScreen(null)));
 					return 1;
 				})
@@ -61,7 +59,6 @@ public class AviesWaypoints implements ClientModInitializer {
 					})))));
 	}
 
-	/** A waypoint where the player died, see {@link DeathWaypoints}. */
 	private static void checkDeath(Minecraft minecraft) {
 		boolean dead = minecraft.player != null && minecraft.player.isDeadOrDying();
 		if (dead && !wasDead && WaypointsConfig.DEATH_WAYPOINTS.get()) {
