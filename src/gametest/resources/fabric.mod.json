@@ -1,0 +1,18 @@
+{
+	"schemaVersion": 1,
+	"id": "avies-waypoints-gametest",
+	"version": "1.0.0",
+	"name": "Avies Waypoints Gametests",
+	"environment": "client",
+	"entrypoints": {
+		"fabric-client-gametest": [
+			"me.avie29.waypoints.gametest.WaypointListGameTest",
+			"me.avie29.waypoints.gametest.DeathWaypointGameTest",
+			"me.avie29.waypoints.gametest.LocatorBarGameTest",
+			"me.avie29.waypoints.gametest.XaeroComparisonGameTest"
+		]
+	},
+	"depends": {
+		"avies-waypoints": "*"
+	}
+}

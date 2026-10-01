@@ -8,17 +8,21 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * The chat format Xaero's Minimap uses to share waypoints:
- * <pre>xaero-waypoint:Name:N:x:y:z:color:rotateOnTp:yaw:Internal-overworld-waypoints</pre>
- * Colons in name and initials can come as "§§", y is "~" when the height is unknown and color is
- * an index into the 16 chat colors.
+ * The chat format Xaero's Minimap (26.5) uses to share waypoints, e.g.
+ * <pre>xaero-waypoint:Test:T:0:-60:0:12:false:0:Internal-overworld</pre>
+ * Fields: name, initials, x, y ("~" when the height is unknown), z, color (index into the 16 chat colors),
+ * rotate on teleport, yaw, destination ("Internal-" + dimension, "External" or missing).
+ * <p>
+ * Xaero escapes name, initials and destination: ":" becomes "^col^", then "-" becomes "^min^",
+ * "_" becomes "-" and "*" becomes "^ast^". The old format ("xaero_waypoint:") is not escaped.
  */
 public final class XaeroShareFormat {
 	public static final String PREFIX = "xaero-waypoint:";
+	private static final String INTERNAL = "Internal-";
 
 	/** Finds a shared waypoint anywhere in a chat line (players' names etc. come before it). */
 	private static final Pattern PATTERN = Pattern.compile(
-		"xaero[-_]waypoint:([^:]*):([^:]*):(-?\\d+):(~|-?\\d+):(-?\\d+):(\\d+):(true|false):(-?\\d+)(?::([^\\s:]+))?");
+		"(xaero[-_]waypoint):([^:]*):([^:]*):(-?\\d+):(~|-?\\d+):(-?\\d+):(\\d+):(true|false):(-?\\d+)(?::(\\S+))?");
 
 	private XaeroShareFormat() {
 	}
@@ -37,81 +41,94 @@ public final class XaeroShareFormat {
 			+ waypoint.color + ":"
 			+ waypoint.rotateOnTp + ":"
 			+ waypoint.yaw + ":"
-			+ worldPart(dimension);
+			+ INTERNAL + removeFormatting(dimensionKey(dimension).replace(":", "^col^"));
 	}
 
 	/** Finds the first shared waypoint in a text, or null. */
 	public static @Nullable Shared find(String text) {
-		Matcher matcher = PATTERN.matcher(text);
+		Matcher matcher = PATTERN.matcher(text.replaceAll("§.", ""));
 		if (!matcher.find()) {
 			return null;
 		}
 		try {
-			String name = unescape(matcher.group(1));
-			String initials = unescape(matcher.group(2));
-			boolean yIncluded = !matcher.group(4).equals("~");
+			boolean newFormat = matcher.group(1).equals("xaero-waypoint");
+			String name = newFormat ? unescape(matcher.group(2)) : matcher.group(2);
+			String initials = newFormat ? unescape(matcher.group(3)) : matcher.group(3);
+			boolean yIncluded = !matcher.group(5).equals("~");
 			Waypoint waypoint = new Waypoint(
 				name.isEmpty() ? "Waypoint" : name,
 				initials.isEmpty() ? Waypoint.defaultInitials(name) : initials,
-				Integer.parseInt(matcher.group(3)),
-				yIncluded ? Integer.parseInt(matcher.group(4)) : 64,
-				Integer.parseInt(matcher.group(5)),
-				Integer.parseInt(matcher.group(6)) % WaypointColor.COUNT);
+				Integer.parseInt(matcher.group(4)),
+				yIncluded ? Integer.parseInt(matcher.group(5)) : 64,
+				Integer.parseInt(matcher.group(6)),
+				Integer.parseInt(matcher.group(7)) % WaypointColor.COUNT);
 			waypoint.yIncluded = yIncluded;
-			waypoint.rotateOnTp = Boolean.parseBoolean(matcher.group(7));
-			waypoint.yaw = Integer.parseInt(matcher.group(8));
-			String world = matcher.group(9);
-			return new Shared(waypoint, world == null ? null : dimensionOf(world), matcher.group());
+			waypoint.rotateOnTp = Boolean.parseBoolean(matcher.group(8));
+			waypoint.yaw = Integer.parseInt(matcher.group(9));
+			String destination = matcher.group(10);
+			return new Shared(waypoint, destination == null ? null : dimensionOf(destination), matcher.group());
 		} catch (NumberFormatException e) {
 			return null;
 		}
 	}
 
-	/** Servers kick players that send "§", so colons are replaced instead of escaped like in Xaero's files. */
 	private static String escape(String text) {
-		return text.replace(':', '-').replace("§", "");
+		return removeFormatting(text.replace(":", "^col^"));
 	}
 
 	private static String unescape(String text) {
-		return text.replace("§§", ":");
+		return restoreFormatting(text).replace("^col^", ":");
 	}
 
-	/** Dimension id to Xaero's container name, e.g. "minecraft:the_nether" to "Internal-the-nether-waypoints". */
-	static String worldPart(String dimension) {
+	private static String removeFormatting(String text) {
+		return text.replace("-", "^min^").replace("_", "-").replace("*", "^ast^");
+	}
+
+	private static String restoreFormatting(String text) {
+		return text.replace("^ast^", "*").replace("-", "_").replace("^min^", "-");
+	}
+
+	/** The name Xaero uses for a dimension: "overworld", "the_nether", "the_end" or "dim%namespace$path". */
+	static String dimensionKey(String dimension) {
 		return switch (dimension) {
-			case "minecraft:overworld" -> "Internal-overworld-waypoints";
-			case "minecraft:the_nether" -> "Internal-the-nether-waypoints";
-			case "minecraft:the_end" -> "Internal-the-end-waypoints";
+			case "minecraft:overworld" -> "overworld";
+			case "minecraft:the_nether" -> "the_nether";
+			case "minecraft:the_end" -> "the_end";
 			default -> {
 				int colon = dimension.indexOf(':');
 				String namespace = colon < 0 ? "minecraft" : dimension.substring(0, colon);
-				String path = dimension.substring(colon + 1).replace('/', '%');
-				yield "Internal-dim%" + namespace + "$" + path + "-waypoints";
+				yield "dim%" + namespace + "$" + dimension.substring(colon + 1).replace('/', '%');
 			}
 		};
 	}
 
-	/** Xaero's container name back to a dimension id. Knows the old number ids (dim%-1) too. */
-	static @Nullable String dimensionOf(String world) {
-		String name = world;
-		if (name.startsWith("Internal-") || name.startsWith("Internal_")) {
-			name = name.substring("Internal-".length());
+	/** Xaero's destination ("Internal-overworld", "Internal-dim%-1", ...) back to a dimension id. */
+	static @Nullable String dimensionOf(String destination) {
+		if (!destination.startsWith(INTERNAL)) {
+			return null;
 		}
-		if (name.endsWith("-waypoints") || name.endsWith("_waypoints")) {
-			name = name.substring(0, name.length() - "-waypoints".length());
+		String key = unescape(destination.substring(INTERNAL.length()));
+		// Sub containers (multiworld ids) come after a slash
+		int slash = key.indexOf('/');
+		if (slash >= 0) {
+			key = key.substring(0, slash);
 		}
-		switch (name) {
+		// Older versions of this mod and of Xaero added "-waypoints"
+		if (key.endsWith("_waypoints")) {
+			key = key.substring(0, key.length() - "_waypoints".length());
+		}
+		switch (key) {
 			case "overworld", "dim%0":
 				return "minecraft:overworld";
-			case "the-nether", "the_nether", "nether", "dim%-1":
+			case "the_nether", "nether", "dim%-1":
 				return "minecraft:the_nether";
-			case "the-end", "the_end", "end", "dim%1":
+			case "the_end", "end", "dim%1":
 				return "minecraft:the_end";
 			default:
 				break;
 		}
-		if (name.startsWith("dim%")) {
-			String id = name.substring("dim%".length());
+		if (key.startsWith("dim%")) {
+			String id = key.substring("dim%".length());
 			int dollar = id.indexOf('$');
 			if (dollar > 0) {
 				return id.substring(0, dollar) + ":" + id.substring(dollar + 1).replace('%', '/');

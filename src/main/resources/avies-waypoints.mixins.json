@@ -2,7 +2,10 @@
 	"required": true,
 	"package": "me.avie29.waypoints.mixin",
 	"compatibilityLevel": "JAVA_25",
-	"client": [],
+	"client": [
+		"HudMixin",
+		"LocatorBarMixin"
+	],
 	"injectors": {
 		"defaultRequire": 1
 	},

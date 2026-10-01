@@ -5,12 +5,14 @@ import me.avie29.waypoints.waypoint.Waypoint;
 import me.avie29.waypoints.waypoint.WaypointColor;
 import me.avie29.waypoints.waypoint.WaypointStore;
 import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.TextColor;
 import org.jspecify.annotations.Nullable;
 
 import java.util.LinkedHashMap;
@@ -31,18 +33,21 @@ public final class ChatShareHandler {
 		}
 	};
 	private static int nextId;
+	/** With Xaero's Minimap installed, Xaero shows shared waypoints with its own "Add" button. */
+	public static boolean deferToXaero = FabricLoader.getInstance().isModLoaded("xaerominimap");
 
 	private ChatShareHandler() {
 	}
 
 	public static void register() {
-		ClientReceiveMessageEvents.ALLOW_CHAT.register((message, playerChatMessage, sender, boundChatType, timeStamp) -> handle(message));
-		ClientReceiveMessageEvents.ALLOW_GAME.register((message, overlay) -> overlay || handle(message));
+		ClientReceiveMessageEvents.ALLOW_CHAT.register((message, playerChatMessage, sender, boundChatType, timeStamp) ->
+			handle(message, sender != null ? sender.name() : null));
+		ClientReceiveMessageEvents.ALLOW_GAME.register((message, overlay) -> overlay || handle(message, null));
 	}
 
 	/** Returns false (hides the raw message) when it contained a shared waypoint. */
-	private static boolean handle(Component message) {
-		if (!WaypointsConfig.DETECT_SHARED.get()) {
+	private static boolean handle(Component message, @Nullable String sender) {
+		if (!WaypointsConfig.DETECT_SHARED.get() || deferToXaero) {
 			return true;
 		}
 		String text = message.getString();
@@ -53,27 +58,33 @@ public final class ChatShareHandler {
 
 		int id = nextId++;
 		PENDING.put(id, shared);
-		// Everything before the code is usually "<Player> " or a server chat prefix
-		String before = text.substring(0, text.indexOf(shared.raw())).trim();
-		Minecraft.getInstance().gui.hud.getChat().addClientSystemMessage(sharedMessage(before, shared, id));
+		Component name;
+		if (sender != null) {
+			name = Component.literal(sender);
+		} else {
+			// Like Xaero: system messages usually carry the player name as "<Name>"
+			int open = text.indexOf('<');
+			int close = open < 0 ? -1 : text.indexOf('>', open);
+			name = close > open + 1 ? Component.literal(text.substring(open + 1, close)) : Component.translatable("avies-waypoints.chat.server");
+		}
+		Minecraft.getInstance().gui.hud.getChat().addClientSystemMessage(sharedMessage(name, shared, id));
 		return false;
 	}
 
-	private static Component sharedMessage(String before, XaeroShareFormat.Shared shared, int id) {
+	/** Same look as Xaero: 'Steve shared a waypoint called "Home" from overworld! [Add]', the whole line is clickable. */
+	private static Component sharedMessage(Component sender, XaeroShareFormat.Shared shared, int id) {
 		Waypoint waypoint = shared.waypoint();
-		MutableComponent line = Component.empty();
-		if (!before.isEmpty()) {
-			line.append(Component.literal(before + " "));
-		}
-		line.append(Component.translatable("avies-waypoints.chat.shared").withStyle(ChatFormatting.GRAY));
-		line.append(" ");
-		line.append(waypointName(waypoint, shared.dimension()));
-		line.append(" ");
-		line.append(Component.translatable("avies-waypoints.chat.add")
-			.withStyle(style -> style.withColor(ChatFormatting.GREEN)
-				.withClickEvent(new ClickEvent.RunCommand("/avieswaypoints add_shared " + id))
-				.withHoverEvent(new HoverEvent.ShowText(Component.translatable("avies-waypoints.chat.add.tooltip")))));
-		return line;
+		MutableComponent line = shared.dimension() != null
+			? Component.translatable("avies-waypoints.chat.shared_dimension", sender, waypoint.name, dimensionPath(shared.dimension()))
+			: Component.translatable("avies-waypoints.chat.shared", sender, waypoint.name);
+		line.append(Component.translatable("avies-waypoints.chat.add").withStyle(ChatFormatting.DARK_GREEN, ChatFormatting.UNDERLINE));
+		return line.withStyle(style -> style.applyFormat(ChatFormatting.GRAY)
+			.withClickEvent(new ClickEvent.RunCommand("/avieswaypoints add_shared " + id))
+			.withHoverEvent(new HoverEvent.ShowText(Component.literal(coordinates(waypoint)))));
+	}
+
+	private static String dimensionPath(String dimension) {
+		return dimension.substring(dimension.indexOf(':') + 1);
 	}
 
 	/** "[Name]" in the waypoint color, hovering shows coordinates and dimension. */
@@ -82,9 +93,9 @@ public final class ChatShareHandler {
 		if (dimension != null) {
 			hover.append("\n").append(Component.literal(dimension).withStyle(ChatFormatting.GRAY));
 		}
-		ChatFormatting color = waypoint.color == 0 ? ChatFormatting.DARK_GRAY : WaypointColor.format(waypoint.color);
+		int color = waypoint.color == 0 ? 0x555555 : WaypointColor.rgb(waypoint.color);
 		return Component.literal("[" + waypoint.name + "]")
-			.withStyle(style -> style.withColor(color).withHoverEvent(new HoverEvent.ShowText(hover)));
+			.withStyle(style -> style.withColor(TextColor.fromRgb(color)).withHoverEvent(new HoverEvent.ShowText(hover)));
 	}
 
 	public static String coordinates(Waypoint waypoint) {

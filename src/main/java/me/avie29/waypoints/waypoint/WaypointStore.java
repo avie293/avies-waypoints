@@ -9,7 +9,7 @@ import me.avie29.waypoints.AviesWaypoints;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ServerData;
-import net.minecraft.server.integrated.IntegratedServer;
+import net.minecraft.client.server.IntegratedServer;
 import net.minecraft.world.level.storage.LevelResource;
 import org.jspecify.annotations.Nullable;
 
@@ -70,6 +70,26 @@ public final class WaypointStore {
 		return dimension == null ? List.of() : get(dimension);
 	}
 
+	/** Waypoints of all dimensions of the current world, by dimension id. The lists are live. */
+	public static Map<String, List<Waypoint>> all() {
+		return WAYPOINTS;
+	}
+
+	/** Dimensions that have waypoints, plus the current one. */
+	public static List<String> dimensions() {
+		List<String> dimensions = new ArrayList<>();
+		WAYPOINTS.forEach((dimension, list) -> {
+			if (!list.isEmpty()) {
+				dimensions.add(dimension);
+			}
+		});
+		String current = currentDimension();
+		if (current != null && !dimensions.contains(current)) {
+			dimensions.add(0, current);
+		}
+		return dimensions;
+	}
+
 	public static @Nullable String currentDimension() {
 		Minecraft minecraft = Minecraft.getInstance();
 		return minecraft.level == null ? null : minecraft.level.dimension().identifier().toString();
@@ -82,6 +102,12 @@ public final class WaypointStore {
 
 	public static void remove(String dimension, Waypoint waypoint) {
 		get(dimension).remove(waypoint);
+		save();
+	}
+
+	/** Removes several waypoints and saves once. */
+	public static void removeAll(String dimension, List<Waypoint> waypoints) {
+		get(dimension).removeAll(waypoints);
 		save();
 	}
 
