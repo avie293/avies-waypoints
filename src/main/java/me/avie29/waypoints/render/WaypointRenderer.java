@@ -6,14 +6,12 @@ import me.avie29.waypoints.waypoint.Waypoint;
 import me.avie29.waypoints.waypoint.WaypointColor;
 import me.avie29.waypoints.waypoint.WaypointStore;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElement;
-import net.minecraft.client.Camera;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.phys.Vec3;
-import org.joml.Vector3fc;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -46,9 +44,7 @@ public final class WaypointRenderer implements HudElement {
 		Window window = minecraft.getWindow();
 		int width = window.getWidth();
 		int height = window.getHeight();
-		Camera camera = minecraft.gameRenderer.mainCamera();
-		Vec3 cameraPos = camera.position();
-		Vector3fc forward = camera.forwardVector();
+		WorldProjection projection = WorldProjection.current(minecraft);
 		float partialTick = deltaTracker.getGameTimeDeltaPartialTick(false);
 		Vec3 playerPos = player.getPosition(partialTick);
 		int maxDistance = WaypointsConfig.MAX_DISTANCE.get();
@@ -58,18 +54,15 @@ public final class WaypointRenderer implements HudElement {
 			if (!waypoint.visible) {
 				continue;
 			}
-			Vec3 pos = waypoint.renderPos(playerPos.y + 1.0);
-			Vec3 offset = pos.subtract(cameraPos);
-			double depth = offset.x * forward.x() + offset.y * forward.y() + offset.z * forward.z();
-			if (depth <= 0.05) {
+			WorldProjection.Point point = projection.project(waypoint.renderPos(playerPos.y + 1.0), width, height);
+			if (point == null) {
 				continue;
 			}
 			double distance = distance(waypoint, playerPos);
 			if (maxDistance > 0 && waypoint.type != Waypoint.Type.DEATH && horizontalDistance(waypoint, playerPos) > maxDistance) {
 				continue;
 			}
-			Vec3 ndc = minecraft.gameRenderer.projectPointToScreen(pos);
-			visible.add(new Visible(waypoint, (ndc.x + 1.0) * 0.5 * width, (1.0 - ndc.y) * 0.5 * height, distance, depth));
+			visible.add(new Visible(waypoint, point.x(), point.y(), distance, point.depth()));
 		}
 		if (visible.isEmpty()) {
 			return;
