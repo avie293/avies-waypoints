@@ -20,6 +20,9 @@
 	"avies-waypoints.chat.exists": "Wegpunkt %s gibt es schon",
 	"avies-waypoints.chat.expired": "Dieser Wegpunkt kann nicht mehr hinzugefügt werden",
 
+	"avies-waypoints.import.done": "%s Wegpunkte aus Xaero's Minimap importiert",
+	"avies-waypoints.import.no_world": "Betritt eine Welt, um ihre Wegpunkte aus Xaero's Minimap zu importieren",
+
 	"avies-waypoints.color.black": "Schwarz",
 	"avies-waypoints.color.dark_blue": "Dunkelblau",
 	"avies-waypoints.color.dark_green": "Dunkelgrün",
@@ -93,6 +96,10 @@
 	"config.avies-waypoints.keepOldDeaths.tooltip": "Bei einem neuen Tod wird der vorherige Todes-Wegpunkt zu \"Alter Tod #N\", statt gelöscht zu werden",
 	"config.avies-waypoints.detectShared": "Geteilte Wegpunkte erkennen",
 	"config.avies-waypoints.detectShared.tooltip": "Zeigt im Chat geteilte Wegpunkte (auch von Xaero's Minimap) mit einem Hinzufügen-Button an",
+	"config.avies-waypoints.importXaero": "Aus Xaero's Minimap importieren",
+	"config.avies-waypoints.importXaero.tooltip": "Beim ersten Betreten einer Welt werden ihre Wegpunkte aus Xaero's Minimap (.minecraft/xaero/minimap) einmalig importiert",
+	"config.avies-waypoints.importXaeroNow": "Xaero-Wegpunkte jetzt importieren",
+	"config.avies-waypoints.importXaeroNow.button": "Importieren",
 	"config.avies-waypoints.group.locatorBar": "Ortungsleiste",
 	"config.avies-waypoints.playerHeads": "Spielerköpfe",
 	"config.avies-waypoints.playerHeads.tooltip": "Zeigt in der Leiste über der Hotbar die Köpfe der Spieler statt farbiger Punkte. Weiter entfernte Köpfe werden blasser, die Entfernung des Kopfes, auf den du schaust, steht über der Leiste",

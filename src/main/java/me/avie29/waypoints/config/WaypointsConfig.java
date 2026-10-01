@@ -1,5 +1,6 @@
 package me.avie29.waypoints.config;
 
+import me.avie29.tabbylib.api.ActionEntry;
 import me.avie29.tabbylib.api.TabbyConfig;
 import me.avie29.tabbylib.api.option.BooleanOption;
 import me.avie29.tabbylib.api.option.DoubleOption;
@@ -8,6 +9,9 @@ import me.avie29.tabbylib.api.option.IntOption;
 import me.avie29.tabbylib.api.option.KeyBindOption;
 import me.avie29.waypoints.AviesWaypoints;
 import me.avie29.waypoints.Keybinds;
+import me.avie29.waypoints.waypoint.XaeroImporter;
+import net.minecraft.ChatFormatting;
+import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 
 public final class WaypointsConfig {
@@ -35,6 +39,7 @@ public final class WaypointsConfig {
 	public static final BooleanOption DEATH_WAYPOINTS = BooleanOption.builder("deathWaypoints", true).build();
 	public static final BooleanOption KEEP_OLD_DEATHS = BooleanOption.builder("keepOldDeaths", true).dependsOn(DEATH_WAYPOINTS).build();
 	public static final BooleanOption DETECT_SHARED = BooleanOption.builder("detectShared", true).build();
+	public static final BooleanOption IMPORT_XAERO = BooleanOption.builder("importXaero", true).build();
 
 	public static final BooleanOption PLAYER_HEADS = BooleanOption.builder("playerHeads", false).build();
 	public static final BooleanOption WAYPOINTS_ON_BAR = BooleanOption.builder("waypointsOnBar", false).dependsOn(PLAYER_HEADS).build();
@@ -44,11 +49,21 @@ public final class WaypointsConfig {
 	private WaypointsConfig() {
 	}
 
+	private static void importNow() {
+		Minecraft minecraft = Minecraft.getInstance();
+		Component message = minecraft.level == null
+			? Component.translatable("avies-waypoints.import.no_world")
+			: Component.translatable("avies-waypoints.import.done", XaeroImporter.importCurrentWorld(minecraft));
+		minecraft.gui.hud.getChat().addClientSystemMessage(message.copy().withStyle(ChatFormatting.GRAY));
+	}
+
 	public static void init() {
 		CONFIG = TabbyConfig.builder(AviesWaypoints.MOD_ID)
 			.category("general", category -> category
 				.group("display", group -> group.add(ENABLED, SHOW_DISTANCE, NAME_WITH_DISTANCE, SCALE, OPACITY, MAX_DISTANCE))
-				.group("waypoints", group -> group.add(DEATH_WAYPOINTS, KEEP_OLD_DEATHS, DETECT_SHARED))
+				.group("waypoints", group -> group.add(DEATH_WAYPOINTS, KEEP_OLD_DEATHS, DETECT_SHARED, IMPORT_XAERO,
+					ActionEntry.of(Component.translatable("config.avies-waypoints.importXaeroNow"),
+						Component.translatable("config.avies-waypoints.importXaeroNow.button"), WaypointsConfig::importNow)))
 				.group("locatorBar", group -> group.add(PLAYER_HEADS, WAYPOINTS_ON_BAR))
 				.group("keys", group -> group.add(
 					KeyBindOption.builder("keyAdd", Keybinds.ADD).build(),
