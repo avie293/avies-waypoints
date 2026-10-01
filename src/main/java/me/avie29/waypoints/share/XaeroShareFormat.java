@@ -10,7 +10,7 @@ import java.util.regex.Pattern;
 /**
  * The chat format Xaero's Minimap uses to share waypoints:
  * <pre>xaero-waypoint:Name:N:x:y:z:color:rotateOnTp:yaw:Internal-overworld-waypoints</pre>
- * Colons in name and initials are replaced with "§§", y is "~" when the height is unknown and color is
+ * Colons in name and initials can come as "§§", y is "~" when the height is unknown and color is
  * an index into the 16 chat colors.
  */
 public final class XaeroShareFormat {
@@ -67,8 +67,9 @@ public final class XaeroShareFormat {
 		}
 	}
 
+	/** Servers kick players that send "§", so colons are replaced instead of escaped like in Xaero's files. */
 	private static String escape(String text) {
-		return text.replace(":", "§§");
+		return text.replace(':', '-').replace("§", "");
 	}
 
 	private static String unescape(String text) {
