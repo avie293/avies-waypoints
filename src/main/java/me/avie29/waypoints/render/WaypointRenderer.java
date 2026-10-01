@@ -6,14 +6,12 @@ import me.avie29.waypoints.waypoint.Waypoint;
 import me.avie29.waypoints.waypoint.WaypointColor;
 import me.avie29.waypoints.waypoint.WaypointStore;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElement;
-import net.minecraft.client.Camera;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.phys.Vec3;
-import org.joml.Vector3fc;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -26,8 +24,9 @@ public final class WaypointRenderer implements HudElement {
 	private static final double POINTING_ANGLE = Math.toRadians(10);
 	private static final double NEARBY_DISTANCE = 20;
 	private static final int KM_THRESHOLD = 10000;
+	private static final double MAX_CLOSE_SCALE = 8.0;
 
-	private record Visible(Waypoint waypoint, double screenX, double screenY, double distance) {
+	private record Visible(Waypoint waypoint, double screenX, double screenY, double distance, double depth) {
 	}
 
 	@Override
@@ -45,9 +44,7 @@ public final class WaypointRenderer implements HudElement {
 		Window window = minecraft.getWindow();
 		int width = window.getWidth();
 		int height = window.getHeight();
-		Camera camera = minecraft.gameRenderer.mainCamera();
-		Vec3 cameraPos = camera.position();
-		Vector3fc forward = camera.forwardVector();
+		WorldProjection projection = WorldProjection.current(minecraft);
 		float partialTick = deltaTracker.getGameTimeDeltaPartialTick(false);
 		Vec3 playerPos = player.getPosition(partialTick);
 		int maxDistance = WaypointsConfig.MAX_DISTANCE.get();
@@ -57,17 +54,15 @@ public final class WaypointRenderer implements HudElement {
 			if (!waypoint.visible) {
 				continue;
 			}
-			Vec3 pos = waypoint.renderPos(playerPos.y + 1.0);
-			Vec3 offset = pos.subtract(cameraPos);
-			if (offset.x * forward.x() + offset.y * forward.y() + offset.z * forward.z() <= 0.05) {
+			WorldProjection.Point point = projection.project(waypoint.renderPos(playerPos.y + 1.0), width, height);
+			if (point == null) {
 				continue;
 			}
 			double distance = distance(waypoint, playerPos);
 			if (maxDistance > 0 && waypoint.type != Waypoint.Type.DEATH && horizontalDistance(waypoint, playerPos) > maxDistance) {
 				continue;
 			}
-			Vec3 ndc = minecraft.gameRenderer.projectPointToScreen(pos);
-			visible.add(new Visible(waypoint, (ndc.x + 1.0) * 0.5 * width, (1.0 - ndc.y) * 0.5 * height, distance));
+			visible.add(new Visible(waypoint, point.x(), point.y(), distance, point.depth()));
 		}
 		if (visible.isEmpty()) {
 			return;
@@ -91,6 +86,7 @@ public final class WaypointRenderer implements HudElement {
 		int nameScale = Math.max(1, (int) Math.ceil(autoScale * 0.5 * scale));
 		int distanceScale = Math.max(1, (int) Math.ceil(autoScale * scale));
 		float alpha = 0.52274513F * WaypointsConfig.OPACITY.get() / 100.0F;
+		double closeDepth = 0.021333335 * height / autoScale / (2.0 * Math.tan(fov / 2.0));
 
 		float guiScale = window.getGuiScale();
 		graphics.pose().pushMatrix();
@@ -99,13 +95,14 @@ public final class WaypointRenderer implements HudElement {
 			boolean highlighted = all
 				? Math.abs(entry.screenX() - width / 2.0) <= pointingHalfWidth
 				: entry == main;
-			this.drawWaypoint(graphics, minecraft.font, entry, highlighted, !all && highlighted, iconScale, nameScale, distanceScale, alpha);
+			float closeScale = entry.depth() < closeDepth ? (float) Math.min(closeDepth / entry.depth(), MAX_CLOSE_SCALE) : 1.0F;
+			this.drawWaypoint(graphics, minecraft.font, entry, highlighted, !all && highlighted, closeScale, iconScale, nameScale, distanceScale, alpha);
 		}
 		graphics.pose().popMatrix();
 	}
 
 	private void drawWaypoint(GuiGraphicsExtractor graphics, Font font, Visible entry, boolean highlighted, boolean brighter,
-							  float iconScale, int nameScale, int distanceScale, float alpha) {
+							  float closeScale, float iconScale, int nameScale, int distanceScale, float alpha) {
 		Waypoint waypoint = entry.waypoint();
 		boolean nearby = entry.distance() <= NEARBY_DISTANCE;
 		boolean showDistance = !nearby && switch (WaypointsConfig.SHOW_DISTANCE.get()) {
@@ -119,6 +116,7 @@ public final class WaypointRenderer implements HudElement {
 
 		graphics.pose().pushMatrix();
 		graphics.pose().translate((float) Math.floor(entry.screenX()), (float) Math.floor(entry.screenY()));
+		graphics.pose().scale(closeScale, closeScale);
 
 		int halfIconPixel = (int) iconScale / 2;
 		graphics.pose().pushMatrix();
